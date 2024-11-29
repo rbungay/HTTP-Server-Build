@@ -26,11 +26,11 @@ Make sure you have the following installed:
 
 1. **Clone the repository:**
 
-   ````sh
+   ```sh
    git clone <your-repo-url>
-   cd <your-project-directory>```
+   cd <your-project-directory>
 
-   ````
+   ```
 
 2. **Install dependencies:**
 
