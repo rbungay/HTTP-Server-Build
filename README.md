@@ -36,15 +36,18 @@ Make sure you have the following installed:
 
    If you're using pipenv, install the required packages:
 
-   ````sh
-   pipenv install```
+   ```sh
+   pipenv install
 
-   ````
+   ```
 
 3. **Run the server:**
    To start the HTTP server, use the following command:
 
-   `sh pipenv run python3 -m app.main`
+   ```sh
+   pipenv run python3 -m app.main
+
+   ```
 
    This will launch the server which will begin listening for incoming HTTP requests.
 
