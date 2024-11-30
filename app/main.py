@@ -73,6 +73,16 @@ class HTTPServer:
         # Return 404 if no matching endpoint
         return b'HTTP/1.1 404 Not Found\r\n\r\n'
 
+    def process_post_request(self, decoded_request, request, file_path):
+
+        if 'files' in decoded_request[1]:
+            position = request.find(b'\r\n\r\n')
+            body = request[position +4:]
+            data = body.decode("utf-8")
+            # Write file and return success response
+            self.handle_file_operations(file_path, 'w', data)
+            return b"HTTP/1.1 201 Created\r\n\r\n"
+        return b"HTTP/1.1 404 Not Found\r\n\r\n"
 
 
 
