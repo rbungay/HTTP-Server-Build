@@ -15,21 +15,18 @@ class HTTPServer:
     def handle_file_operations(self,
         file_path: str,
         mode: str ='rb',
-        data: Optional[Union[str, bytes]]= None) -> Optional[Union[Tuple[int,bytes], bool]]:
+        data: Optional[Union[str, bytes]] = None
+    ) -> Optional[Union[Tuple[int, bytes], bool]]:
         """Handle both reading and writing operations"""
-
         try:
-            # To read a file
             if mode == 'rb':
                 with open(file_path, mode) as file:
                     file_size: int = os.stat(file_path).st_size
                     file_data: bytes = file.read()
                 return file_size, file_data
-            # To writing a file
             elif mode == 'wb':
                 with open(file_path, mode) as file:
-                    # Convert string to bytes if necessary
-                    file_data: bytes = data.encode('utf-8') if isinstance(data, str) else data
+                    file_data: bytes = data.encode('utf-8') if isinstance(data, str) else data  # type: ignore
                     file.write(file_data)
                 return True
         except Exception as e:
