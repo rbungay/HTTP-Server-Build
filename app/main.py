@@ -1,4 +1,3 @@
-from telnetlib import ECHO
 import socket  # noqa: F401
 import threading
 import sys
@@ -85,6 +84,36 @@ class HTTPServer:
         return b"HTTP/1.1 404 Not Found\r\n\r\n"
 
 
+    def handle_gzip_encoding(self, response, request):
+        """Compress response with gzip if client supports it
+        Args:
+            response: Original HTTP response
+            request: Original HTTP request (to check for gzip support)
+        """
+        if b"Accept-Encoding" in request and b"gzip" in request:
+            # Convert bytes to string if necessary
+            if isinstance(response, bytes):
+                response = response.decode("utf-8")
+
+            # Split response into header and body
+            header_part, body_part = response.split("\r\n\r\n", 1)
+            # Compress the body
+            compressed_data = gzip.compress(body_part.encode("utf-8"))
+
+            # Update Content-Length for compressed data
+            updated_file_size = len(compressed_data)
+            header_lines = header_part.split("\r\n")
+            header_part = "\r\n".join(
+                line if not line.startswith("Content-Length:")
+                else f"Content-Length: {updated_file_size}"
+                for line in header_lines
+            )
+            # Add gzip encoding header
+            header_part += "\r\nContent-Encoding: gzip"
+
+            # Combine headers with compressed body
+            response = f"{header_part}\r\n\r\n".encode("utf-8") + compressed_data
+        return response
 
 
 
