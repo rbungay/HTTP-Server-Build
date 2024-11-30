@@ -12,29 +12,34 @@ class HTTPServer:
         self.port: int = port
         self.files_directory: Optional[str] = None #To store directory path for file operations.
 
-    def handle_file_operations(self, file_path, mode='rb', data=None):
+    def handle_file_operations(self,
+        file_path: str,
+        mode: str ='rb',
+        data: Optional[Union[str, bytes]]= None) -> Optional[Union[Tuple[int,bytes], bool]]:
         """Handle both reading and writing operations"""
 
         try:
             # To read a file
             if mode == 'rb':
                 with open(file_path, mode) as file:
-                    file_size = os.stat(file_path).st_size
-                    file_data = file.read()
+                    file_size: int = os.stat(file_path).st_size
+                    file_data: bytes = file.read()
                 return file_size, file_data
             # To writing a file
             elif mode == 'wb':
                 with open(file_path, mode) as file:
-                    file.write(data.encode('utf-8') if isinstance(data, str) else data)
+                    # Convert string to bytes if necessary
+                    file_data: bytes = data.encode('utf-8') if isinstance(data, str) else data
+                    file.write(file_data)
                 return True
         except Exception as e:
             print(f'File operation error: {e}')
             return None
 
 
-    def extract_user_agent(self, request):
+    def extract_user_agent(self, request: bytes) -> str:
         """Extract User-Agent from request headers"""
-        headers = request.decode('utf-8').split('\r\n')
+        headers: List[str] = request.decode('utf-8').split('\r\n')
         for header in headers:
             if header.startswith('User-Agent:'):
                 return header.split(': ')[1]
@@ -42,7 +47,10 @@ class HTTPServer:
 
 
 
-    def process_get_request(self, decoded_request, file_path, request):
+    def process_get_request(self,
+        decoded_request: List[str],
+        file_path: str,
+        request: bytes) -> bytes:
         #Root path
         if decoded_request[1] == '/':
             return b"HTTP/1.1 200 OK\r\n\r\n"
@@ -50,7 +58,7 @@ class HTTPServer:
         #Echo path
         elif 'echo' in decoded_request[1]:
             #Extract echo content
-            echo_endpoint = decoded_request[1].split('/')[2]
+            echo_endpoint: str = decoded_request[1].split('/')[2]
             response = (
                 f'HTTP/1.1 200 OK\r\n'
                 f'Content-Type: text/plain\r\n'
@@ -83,7 +91,12 @@ class HTTPServer:
         # Return 404 if no matching endpoint
         return b'HTTP/1.1 404 Not Found\r\n\r\n'
 
-    def process_post_request(self, decoded_request, request, file_path):
+    def process_post_request(
+        self,
+        decoded_request: List[str],
+        request: bytes,
+        file_path: str
+    )-> bytes:
 
         if 'files' in decoded_request[1]:
             position = request.find(b'\r\n\r\n')
@@ -94,10 +107,13 @@ class HTTPServer:
         return b"HTTP/1.1 404 Not Found\r\n\r\n"
 
 
-    def handle_gzip_encoding(self, response, request):
+    def handle_gzip_encoding(
+        self,
+        response: Union[bytes, str],
+        request: bytes) -> bytes:
         """Compress response with gzip if client supports it"""
         if b"Accept-Encoding" not in request or b"gzip" not in request:
-            return response
+            return response if isinstance(response, bytes) else response.encode('utf-8')
 
         try:
             # If response is already bytes, try to decode it
@@ -126,7 +142,7 @@ class HTTPServer:
             print(f"Compression error: {e}")
             return response
 
-    def handle_client(self, client_socket):
+    def handle_client(self, client_socket) -> None:
         try:
             request = client_socket.recv(1024)
             decoded_request = request.decode("utf-8").split()
