@@ -1,3 +1,4 @@
+from telnetlib import ECHO
 import socket  # noqa: F401
 import threading
 import sys
@@ -30,6 +31,22 @@ class HTTPServer:
             print(f'File operation error: {e}')
             return None
 
+    def process_get_request(self, decoded_request, file_path):
+        #Root path
+        if decoded_request[1] == '/':
+            return b"HTTP/1.1 200 OK\r\n\r\n"
+
+        #Echo path
+        elif 'echo' in decoded_request[1]:
+            #Extract echo content
+            echo_endpoint = decoded_request[1].split('/')[2]
+            response = (
+                f'HTTP/1.1 200 OK\r\n'
+                f'Content-Type: text/plain\r\n'
+                f'Content-Length: {len(echo_endpoint)}\r\n\r\n'
+                f'{echo_endpoint}'
+            )
+            return response.encode('utf-8')
 
 
 
@@ -43,11 +60,7 @@ class HTTPServer:
         # Close the client connection
         client_socket.close()
 
-    def file_details(file_path):
-        file_size = os.stat(file_path).st_size
-        with open(file_path, "r") as file:
-            file_data = file.read()
-        return file_size, file_data
+
 
     def response(client_socket, request, args):
         decoded_request = request.decode("utf-8").split()
