@@ -43,11 +43,11 @@ class HTTPServer:
         return ''
 
 
-
     def process_get_request(self,
         decoded_request: List[str],
         file_path: str,
-        request: bytes) -> bytes:
+        request: bytes
+    ) -> bytes:
         #Root path
         if decoded_request[1] == '/':
             return b"HTTP/1.1 200 OK\r\n\r\n"
@@ -56,7 +56,7 @@ class HTTPServer:
         elif 'echo' in decoded_request[1]:
             #Extract echo content
             echo_endpoint: str = decoded_request[1].split('/')[2]
-            response = (
+            response: str = (
                 f'HTTP/1.1 200 OK\r\n'
                 f'Content-Type: text/plain\r\n'
                 f'Content-Length: {len(echo_endpoint)}\r\n\r\n'
@@ -66,8 +66,8 @@ class HTTPServer:
 
         #user-agent path
         elif "user-agent" in decoded_request[1]:
-            user_agent = self.extract_user_agent(request)
-            response = (
+            user_agent: str = self.extract_user_agent(request)
+            response: str = (
                 f"HTTP/1.1 200 OK\r\n"
                 f"Content-Type: text/plain\r\n"
                 f"Content-Length: {len(user_agent)}\r\n\r\n"
