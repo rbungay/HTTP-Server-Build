@@ -59,6 +59,21 @@ class HTTPServer:
             )
             return response.encode('utf-8')
 
+        #file requests path
+        elif 'files' in decoded_request[1] and os.path.exists(file_path):
+            file_size, file_data = self.handle_file_operations(file_path)
+            response = (
+                f"HTTP/1.1 200 OK\r\n"
+                f"Content-Type: application/octet-stream\r\n"
+                f"Content-Length: {file_size}\r\n\r\n"
+                f"{file_data}"
+            )
+            return response.encode('utf-8')
+
+        # Return 404 if no matching endpoint
+        return b'HTTP/1.1 404 Not Found\r\n\r\n'
+
+
 
 
 
