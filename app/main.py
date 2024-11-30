@@ -48,6 +48,17 @@ class HTTPServer:
             )
             return response.encode('utf-8')
 
+        #user-agent path
+        elif "user-agent" in decoded_request[1]:
+            user_agent_endpoint = decoded_request[1]
+            response = (
+                f"HTTP/1.1 200 OK\r\n"
+                f"Content-Type: text/plain\r\n"
+                f"Content-Length: {len(user_agent_endpoint)}\r\n\r\n"
+                f"{user_agent_endpoint}"
+            )
+            return response.encode('utf-8')
+
 
 
 
