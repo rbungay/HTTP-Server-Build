@@ -115,67 +115,33 @@ class HTTPServer:
             response = f"{header_part}\r\n\r\n".encode("utf-8") + compressed_data
         return response
 
+    def handle_client(self, client_socket):
+        try:
+            request = client_socket.recv(1024)
+            decoded_request = request.decode("utf-8").split()
+            # Construct file path for file operations
+            file_path = self.files_directory + (decoded_request[1].split("/")[-1])
 
-
-    def handle_client(client_socket):
-        # Receive the client's request
-        request = client_socket.recv(1024)
-        args = sys.argv
-        response(client_socket, request, args)
-        # Close the client connection
-        client_socket.close()
-
-
-
-    def response(client_socket, request, args):
-        decoded_request = request.decode("utf-8").split()
-        file_path = args[-1] + (decoded_request[1].split("/")[-1])
-        if decoded_request[0] == "GET":
-            if decoded_request[1] == "/":
-                response = b"HTTP/1.1 200 OK\r\n\r\n"
-            elif "echo" in decoded_request[1]:
-                echo_endpoint = decoded_request[1].split("/")[2]
-                response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(echo_endpoint)}\r\n\r\n{echo_endpoint}"
-                response = response.encode("utf-8")
-            elif "user-agent" in decoded_request[1]:
-                user_agent_endpoint = decoded_request[-1]
-                response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(user_agent_endpoint)}\r\n\r\n{user_agent_endpoint}"
-                response = response.encode("utf-8")
-            elif "files" in decoded_request[1] and os.path.exists(file_path):
-                file_size, file_data = file_details(file_path)
-                response = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {file_size}\r\n\r\n{file_data}"
-                response = response.encode("utf-8")
+            # Route request based on HTTP method
+            if decoded_request[0] == "GET":
+                response = self.process_get_request(decoded_request, file_path)
+            elif decoded_request[0] == "POST":
+                response = self.process_post_request(decoded_request, request, file_path)
             else:
-                response = b"HTTP/1.1 404 Not Found\r\n\r\n"
-        elif decoded_request[0] == "POST":
-            if "files" in decoded_request[1]:
-                position = request.find(b"\r\n\r\n")
-                body = request[position + 4 :]
-                data = body.decode("utf-8")
-                with open(file_path, "w") as f:
-                    f.write(data)
-                response = b"HTTP/1.1 201 Created\r\n\r\n"
-        if b"Accept-Encoding" in request and b"gzip" in request:
-            response = response.decode("utf-8")
-            header_part, body_part = response.split("\r\n\r\n", 1)
-            compressed_data = gzip.compress(
-                body_part.encode("utf-8")
-            )  # Compressing as gzip
-            # Add the new header
-            updated_file_size = len(compressed_data)  # or any new size you need to set
-            header_lines = header_part.split("\r\n")
-            header_part = "\r\n".join(
-                line
-                if not line.startswith("Content-Length:")
-                else f"Content-Length: {updated_file_size}"
-                for line in header_lines
-            )
-            header_part += "\r\nContent-Encoding: gzip"
-            # Reassemble the response
-            response = f"{header_part}\r\n\r\n"
-            response = response.encode("utf-8")
-            response += compressed_data
-        client_socket.send(response)
+                response = b"HTTP/1.1 405 Method Not Allowed\r\n\r\n"
+
+            # Apply gzip compression if supported
+            response = self.handle_gzip_encoding(response, request)
+            # Send response to client
+            client_socket.send(response)
+        finally:
+            # Ensure socket is closed even if an error occurs
+            client_socket.close()
+
+
+
+
+
 
 def main():
     # Create the server socket
