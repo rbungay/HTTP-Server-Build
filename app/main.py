@@ -75,7 +75,12 @@ class HTTPServer:
                 return response
 
             #file requests path
-            elif 'files' in decoded_request[1] and os.path.exists(file_path):
+            elif 'files' in decoded_request[1]:
+                if not self.files_directory:
+                    return b'HTTP/1.1 404 Not Found\r\n\r\n'
+                if not os.path.exists(file_path):
+                    return b'HTTP/1.1 404 Not Found\r\n\r\n'
+
                 result: Optional[Union[Tuple[int, bytes], bool]] = self.handle_file_operations(file_path)
                 if isinstance(result, tuple):
                     file_size, file_data = result
@@ -141,27 +146,29 @@ class HTTPServer:
             print(f"Compression error: {e}")
             return response if isinstance(response, bytes) else response.encode('utf-8')
 
-    def handle_client(self, client_socket) -> None:
+    def handle_client(self, client_socket: socket.socket) -> None:
         try:
             request: bytes = client_socket.recv(1024)
             decoded_request: List[str] = request.decode("utf-8").split()
             # Construct file path for file operations
             # Validate directory path
-            if not self.files_directory:
-                raise ValueError("Files directory not set")
-
-            file_path: str = os.path.join(
-                self.files_directory,
-                decoded_request[1].split("/")[-1]
-            )
+            # Only validate directory for file operations
+            file_path: Optional[str] = None
+            if 'files' in decoded_request[1]:
+                if not self.files_directory:
+                    raise ValueError("Files directory not set")
+                file_path = os.path.join(
+                    self.files_directory,
+                    decoded_request[1].split("/")[-1]
+                )
 
             response: bytes
 
             # Route request based on HTTP method
             if decoded_request[0] == "GET":
-                response = self.process_get_request(decoded_request, file_path, request)
+                response = self.process_get_request(decoded_request, file_path if file_path else "", request)
             elif decoded_request[0] == "POST":
-                response = self.process_post_request(decoded_request, request, file_path)
+                response = self.process_post_request(decoded_request, request, file_path if file_path else "")
             else:
                 response = b"HTTP/1.1 405 Method Not Allowed\r\n\r\n"
 
@@ -176,12 +183,10 @@ class HTTPServer:
     def start(self):
         #Start HTTP Server and listen for connections
         # Validate command line arguments
-        if len(sys.argv) < 2:
-            raise ValueError("Files directory not provided")
-
-        self.files_directory = sys.argv[-1]
-        if not os.path.isdir(self.files_directory):
-            raise NotADirectoryError("Invalid directory path")
+        if len(sys.argv) > 1:
+            self.files_directory = sys.argv[-1]
+            if not os.path.isdir(self.files_directory):
+                raise NotADirectoryError("Invalid directory path")
 
         server_socket: socket.socket = socket.create_server(
             (self.host, self.port),
