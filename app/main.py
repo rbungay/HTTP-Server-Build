@@ -77,13 +77,15 @@ class HTTPServer:
 
         #file requests path
         elif 'files' in decoded_request[1] and os.path.exists(file_path):
-            file_size, file_data = self.handle_file_operations(file_path)
-            response = (
-                b"HTTP/1.1 200 OK\r\n"
-                b"Content-Type: application/octet-stream\r\n"
-                f"Content-Length: {file_size}\r\n\r\n".encode('utf-8')
-            ) + file_data
-            return response
+            result: Optional[Union[Tuple[int, bytes], bool]] = self.handle_file_operations(file_path)
+            if isinstance(result, tuple):
+                file_size, file_data = result
+                response: bytes = (
+                    b"HTTP/1.1 200 OK\r\n"
+                    b"Content-Type: application/octet-stream\r\n"
+                    f"Content-Length: {file_size}\r\n\r\n".encode('utf-8')
+                ) + file_data
+                return response
 
         # Return 404 if no matching endpoint
         return b'HTTP/1.1 404 Not Found\r\n\r\n'
