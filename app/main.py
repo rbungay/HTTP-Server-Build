@@ -138,20 +138,34 @@ class HTTPServer:
             # Ensure socket is closed even if an error occurs
             client_socket.close()
 
+    def start(self):
+        #Start HTTP Server and listen for connections
+        self.files_directory = sys.argv[-1]
+        server_socket = socket.create_server((self.host, self.port), reuse_port=True)
+
+        try:
+            while True:
+                # Accept new client connections
+                client_socket, _ = server_socket.accept()
+                # Create new thread for each client
+                client_thread = threading.Thread(
+                    target=self.handle_client,
+                    args=(client_socket,)
+                )
+                client_thread.start()
+        except KeyboardInterrupt:
+            # Handle graceful shutdown on Ctrl+C
+            print("\nShutting down server...")
+            server_socket.close()
+
 
 
 
 
 
 def main():
-    # Create the server socket
-    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    while True:
-        # Accept a new client connection
-        client_socket, client_address = server_socket.accept()
-        # Create a new thread to handle the client connection
-        client_thread = threading.Thread(target=handle_client, args=(client_socket,))
-        client_thread.start()
+    server = HTTPServer()
+    server.start()
 
 if __name__ == "__main__":
     main()
