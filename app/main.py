@@ -11,6 +11,30 @@ class HTTPServer:
         self.port = port
         self.files_directory = None #To store directory path for file operations.
 
+    def handle_file_operations(self, file_path, mode='r', data=None):
+        """Handle both reading and writing operations"""
+
+        try:
+            # To read a file
+            if mode == 'r':
+                with open(file_path, mode) as file:
+                    file_size = os.stat(file_path).st_size
+                    file_data = file.read()
+                return file_size, file_data
+            # To writing a file
+            elif mode == 'w':
+                with open(file_path, mode) as file:
+                    file.write(data)
+                return True
+        except Exception as e:
+            print(f'File operation error: {e}')
+            return None
+
+
+
+
+
+
     def handle_client(client_socket):
         # Receive the client's request
         request = client_socket.recv(1024)
