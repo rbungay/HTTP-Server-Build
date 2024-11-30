@@ -1,3 +1,4 @@
+from typing import Tuple, Optional, Union, List
 import socket  # noqa: F401
 import threading
 import sys
@@ -6,10 +7,10 @@ import gzip
 
 class HTTPServer:
 
-    def __init__(self, host='localhost', port=4221):
-        self.host = host
-        self.port = port
-        self.files_directory = None #To store directory path for file operations.
+    def __init__(self, host: str = 'localhost', port: int = 4221) -> None:
+        self.host: str = host
+        self.port: int = port
+        self.files_directory: Optional[str] = None #To store directory path for file operations.
 
     def handle_file_operations(self, file_path, mode='rb', data=None):
         """Handle both reading and writing operations"""
